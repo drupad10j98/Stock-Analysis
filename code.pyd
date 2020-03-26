@@ -1,0 +1,93 @@
+import pandas as pd
+import numpy as np
+from nsepy import get_history,get_index_pe_history
+from datetime import date
+import matplotlib.pyplot as plt
+import datetime
+import yfinance as yf
+
+
+class stock:
+    def __init__(self,ticker):
+        self.ticker=ticker+".NS"
+        self.ticker=ticker.upper()
+        self.data=yf.download(tickers=self.ticker)
+        self.data=self.data.reset_index(level=0)
+        self.start_date=min(self.data['Date'])
+        self.end_date=max(self.data['Date'])
+        
+    def basic_details(self):
+        plt.plot(self.data['Date'],self.data['Close'],color='green',linewidth=3)
+        plt.xlabel('Date')
+        plt.ylabel('Close (In Rs)')
+        plt.title("%s Stock History " % self.ticker)
+        plt.show()
+        print("The min price is %f " % min(self.data['Low']))
+        print("The max price is %f " % max(self.data['High']))
+        
+    def min_price(self):
+        return min(self.data['Low'])
+    
+    def max_price(self):
+        return max(self.data['High'])
+    
+    def pe_value(self,date1=date.today()):
+        nifty_pe = get_index_pe_history(symbol=self.ticker,start=self.start_date,end=date1)
+        nifty_pe=nifty_pe.reset_index(level=0)
+        for i in range(1,nifty_pe.count+1):
+            if nifty_pe[i]['Date']==date1:
+                pe=nifty_pe[i]['P/E']
+                pb=nifty_pe[i]['P/B']
+                div_yield=nifty_pe[i]['Dic Yield']
+        print("P/E:"+pe+"\nP/B:"+pb+"\nDiv Yield:"+div_yield)
+        
+    def realtime_details(self,period='5d'):
+        data=yf.download(tickers=self.ticker,period=period,interval='1m')
+        plt.plot(data,color='green',linewidth=3)
+        plt.xlabel('Date')
+        plt.ylabel('Close (In Rs)')
+        plt.title("%s Stock History " % self.ticker)
+        plt.show()
+        print("The min price is %f " % min(data['Low']))
+        print("The max price is %f " % max(data['High']))
+    
+    def other_details(self):
+        data=yf.Ticker(self.ticker)
+        choice=int(input("Enter your choice 1)Dividends \n2)Splits \n3)Financials \n4)Major Share Holders \n5)Balance Sheet \n6)Earnings \n7)Analysts Recomondations"))
+        if choice==1:
+            print(data.dividents)
+        elif choice==2:
+            print(data.splits)
+        elif choice==3:
+            print(data.financials)
+        elif choice==4:
+            print(data.major_holders)
+        elif choice==5:
+            print(data.balance_sheet)
+        elif choice==6:
+            print(data.earnings)
+        elif choice==7:
+            print(data.recommendations)
+    
+ticker=input("Enter the Stock Name")
+print("The Realtime details of the "+ticker+" is given below ")
+stock_details=stock(ticker)
+stock_details.realtime_details()
+choice=int(input("Enter the choice:\n 1)Basic details of the stock \n 2)Minimum price \n3)Maximum price \n4)P/E value \n5)Real Time data \n6)Other Details"))
+while choice>0 and choice<7:
+    if choice==1:
+        stock_details.basic_details()
+    elif choice==2:
+        stock_details.min_price()
+    elif choice==3:
+        stock_details.max_price()
+    elif choice==4:
+        stock_details.pe_value()
+    elif choice==5:
+        stock_details.realtime_details()
+    elif choice==6:
+        stock_deatils.other_details()
+    choice=int(input("Enter the choice:\n 1)Basic details of the stock \n 2)Minimum price \n3)Maximum price \n4)P/E value \n5)Real Time data \n6)Other Details"))
+
+        
+        
