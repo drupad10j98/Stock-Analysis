@@ -6,7 +6,10 @@ import matplotlib.pyplot as plt
 import datetime
 import yfinance as yf
 
-
+def findDay(date): 
+    day = datetime.datetime.strptime(date, '%d %m %Y').weekday() 
+    return (calendar.day_name[day]) 
+    
 class stock:
     def __init__(self,ticker):
         self.ticker=ticker+".NS"
