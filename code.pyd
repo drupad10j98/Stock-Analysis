@@ -43,6 +43,8 @@ class stock:
         
     def realtime_details(self,period='5d'):
         data=yf.download(tickers=self.ticker,period=period,interval='1m')
+        plt.style.context(['ggplot'])
+        plt.figure(figsize=(15,6))
         plt.plot(data,color='green',linewidth=3)
         plt.xlabel('Date')
         plt.ylabel('Close (In Rs)')
@@ -50,7 +52,7 @@ class stock:
         plt.show()
         print("The min price is %f " % min(data['Low']))
         print("The max price is %f " % max(data['High']))
-    
+        
     def other_details(self):
         data=yf.Ticker(self.ticker)
         choice=int(input("Enter your choice 1)Dividends \n2)Splits \n3)Financials \n4)Major Share Holders \n5)Balance Sheet \n6)Earnings \n7)Analysts Recomondations"))
@@ -69,11 +71,65 @@ class stock:
         elif choice==7:
             print(data.recommendations)
     
+    def predict(self,days):
+        data_copy=self.data[["Adj Close"]]
+        data_copy['Prediction']=data_copy[['Adj Close']].shift(-days)
+        num=len(data_copy['Prediction'])
+        data_copy=data_copy.reset_index(level=0)
+        x = np.array(data_copy.drop(['Prediction'],1))
+        x=x[:num-30]
+        y = np.array(data_copy['Prediction'])
+        y=y[:num-30]
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+        #SVR Model
+        svr_rbf = SVR(kernel='rbf', C=1e3, gamma=0.1) 
+        svr_rbf.fit(x_train, y_train)
+        svm_confidence = svr_rbf.score(x_test, y_test)
+        #Lr model
+        lr = LinearRegression()
+        lr.fit(x_train, y_train)
+        lr_confidence = lr.score(x_test, y_test)
+        x_forecast = np.array(data_copy.drop(['Prediction'],1))[-days:]
+        #Lr prediction
+        lr_prediction = lr.predict(x_forecast)
+        #Svm prediction
+        svm_prediction = svr_rbf.predict(x_forecast)
+        #Getting the dates for prediction
+        Nextdate=[]
+        days_copy=days
+        i=0
+        while days_copy!=0 :
+            i+=1
+            NextDay_Date = datetime.datetime.today() + datetime.timedelta(days=i)
+            N=NextDay_Date.strftime ('%d %m %Y')
+            day=findDay(N)
+            if day=='Saturday' or day=='Sunday':
+                pass
+            else:
+                days_copy-=1
+                Nextdate.append(NextDay_Date.strftime ('%d-%b-%Y'))
+        if lr_confidence > svm_confidence:
+            predicted_data=pd.DataFrame(lr_prediction,Nextdate)
+            confidence=str(lr_confidence*100)
+        else:
+            predicted_data=pd.dataFrame(svm_prediction,Nextdate)
+            confidence=str(svm_confidence*100)
+        print("The prediction data for next "+ str(days)+" is given in the below table" )
+        print(predicted_data)
+        print("The data provided in the above table is "+confidence+" percent accurate")
+        plt.style.context(['ggplot'])
+        plt.figure(figsize=(15,6))
+        plt.plot(predicted_data)
+        plt.xlabel('Date')
+        plt.ylabel('Predicted Amount')
+        plt.title("%s Stock Analytics " % self.ticker)
+        plt.show()
+    
 ticker=input("Enter the Stock Name")
 print("The Realtime details of the "+ticker+" is given below ")
 stock_details=stock(ticker)
 stock_details.realtime_details()
-choice=int(input("Enter the choice:\n 1)Basic details of the stock \n 2)Minimum price \n3)Maximum price \n4)P/E value \n5)Real Time data \n6)Other Details"))
+choice=int(input("Enter the choice:\n 1)Basic details of the stock \n 2)Minimum price \n3)Maximum price \n4)P/E value \n5)Real Time data \n6)Other Details \n7)Predict"))
 while choice>0 and choice<7:
     if choice==1:
         stock_details.basic_details()
@@ -87,6 +143,9 @@ while choice>0 and choice<7:
         stock_details.realtime_details()
     elif choice==6:
         stock_deatils.other_details()
+    elif choice==7 :
+        days=int(input("Enter the number of days"))
+        predict(days)
     choice=int(input("Enter the choice:\n 1)Basic details of the stock \n 2)Minimum price \n3)Maximum price \n4)P/E value \n5)Real Time data \n6)Other Details"))
 
         
